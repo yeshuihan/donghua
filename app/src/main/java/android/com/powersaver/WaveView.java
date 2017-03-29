@@ -1,12 +1,14 @@
 package android.com.powersaver;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextPaint;
@@ -43,14 +45,9 @@ public class WaveView extends View {
     private float speedY;
     /** 记录的波形的点集合*/
     private List<Point> mPointsList;
-    /** 画波形的paint*/
+    /** 画笔paint*/
     private Paint mPaint;
-    /** 画百分比的paint*/
-    private Paint mTextPaint;
-    /** 画圆形的paint*/
-    private Paint mCirlePaint;
-    /** 波形路径*/
-    private Path mWavePath;
+
     /** 用以更新动画*/
     private Timer timer;
     /** 用以实现波浪的水平移动*/
@@ -63,8 +60,7 @@ public class WaveView extends View {
 
     /** 圆的半径*/
     private float circleR;
-    /** 实现图层的合并*/
-    PorterDuffXfermode xfermode=new PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP);
+
 
     public WaveView(Context context) {
         super(context);
@@ -120,10 +116,11 @@ public class WaveView extends View {
                     break;
             }
         }
-        if(mMoveLen>=mWaveWidth){
+        if(!(mMoveLen<mWaveWidth)){
             mMoveLen=0;
-            resetPoint();
             updatePoints();
+            resetPoint();
+
         }
         if(mLevelLine<circleR*2){
             invalidate();
@@ -179,28 +176,13 @@ public class WaveView extends View {
         @Override
         public void run() {
             handler.sendMessage(handler.obtainMessage(what));
-
         }
     }
 
     private void init(){
         mPointsList=new ArrayList<>();
         mPaint=new Paint();
-        mPaint.setColor(Color.GREEN);
-        mPaint.setStyle(Paint.Style.FILL);
         mPaint.setAntiAlias(true);
-
-        mCirlePaint=new Paint();
-        mCirlePaint.setColor(Color.RED);
-        mCirlePaint.setStyle(Paint.Style.FILL);
-        mCirlePaint.setAntiAlias(true);
-
-        mTextPaint =new TextPaint();
-        mTextPaint.setColor(Color.BLUE);
-        mTextPaint.setTextAlign(Paint.Align.CENTER);
-        mTextPaint.setTextSize(30);
-
-        mWavePath=new Path();
     }
 
     @Override
@@ -219,38 +201,67 @@ public class WaveView extends View {
             isMeasureed=true;
             mViewHeight=getMeasuredHeight();
             mViewWidth=getMeasuredWidth();
-
             circleR=(mViewHeight<mViewWidth?mViewHeight:mViewWidth)/2;
-
             maxWaveHeight=circleR/5;
             maxSpeedX=2*circleR/100;
             speedY=2*circleR/100;
-            mLevelLine=0;
+            mLevelLine=5*speedY;
             updatePoints();
         }
 
     }
-
+    /** 实现图层的合并*/
+    PorterDuffXfermode xfermode=new PorterDuffXfermode(PorterDuff.Mode.SRC_IN);
+    /** 实现图层的合并*/
+    PorterDuffXfermode xfermode2=new PorterDuffXfermode(PorterDuff.Mode.DST);
     @Override
     protected void onDraw(Canvas canvas) {
         int save = canvas.saveLayer(mViewWidth/2-circleR,mViewHeight/2-circleR,mViewWidth/2+circleR,mViewHeight/2+circleR,null,Canvas.ALL_SAVE_FLAG);
-        canvas.drawCircle(mViewWidth/2,mViewHeight/2,(mViewHeight<mViewWidth?mViewHeight:mViewWidth)/2,mCirlePaint);
-        mWavePath.reset();
-        int i=0;
-        mWavePath.moveTo(mPointsList.get(i).x,mPointsList.get(i).y);
-        for(;i<mPointsList.size()-2;i=i+2){
-            mWavePath.quadTo(mPointsList.get(i+1).x,mPointsList.get(i+1).y,mPointsList.get(i+2).x,mPointsList.get(i+2).y);
-        }
-        mWavePath.lineTo(mViewWidth/2+circleR,mViewHeight/2+circleR+mWaveHeight-mLevelLine);
-        mWavePath.lineTo(mViewWidth/2+circleR,mViewHeight/2+circleR+mWaveHeight);
-        mWavePath.lineTo(mViewWidth/2-2*circleR,mViewHeight/2+circleR+mWaveHeight);
-        mWavePath.lineTo(mViewWidth/2-2*circleR,mViewHeight/2+circleR+mWaveHeight-mLevelLine);
-        mWavePath.close();
+        canvas.drawBitmap(makeCircle(),0,0,mPaint);
         mPaint.setXfermode(xfermode);
-        canvas.drawPath(mWavePath,mPaint);
-
-        canvas.drawText("" + ((int) (((mLevelLine)/ (2*circleR)) * 100))+ "%", mViewWidth / 2+5, mViewHeight/2+5, mTextPaint);
+        if(mLevelLine<2*circleR){
+            mPaint.setXfermode(xfermode);
+        }else{
+            mPaint.setXfermode(xfermode2);
+        }
+        canvas.drawBitmap(makeWave(),0,0,mPaint);
+        mPaint.setXfermode(null);
         canvas.restoreToCount(save);
+
+    }
+
+    private Bitmap makeCircle() {
+        Bitmap bm = Bitmap.createBitmap(mViewWidth, mViewHeight, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bm);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Color.GREEN);
+        p.setStyle(Paint.Style.FILL);
+        p.setAntiAlias(true);
+        c.drawCircle(mViewWidth/2,mViewHeight/2,circleR,p);
+        return bm;
+    }
+
+    private Bitmap makeWave() {
+        Bitmap bm = Bitmap.createBitmap(mViewWidth, mViewHeight, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bm);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Color.GREEN);
+        p.setStyle(Paint.Style.FILL);
+        p.setAntiAlias(true);
+
+        Path wavePath=new Path();
+        int i=0;
+        wavePath.moveTo(mPointsList.get(i).x,mPointsList.get(i).y);
+        for(;i<mPointsList.size()-2;i=i+2){
+            wavePath.quadTo(mPointsList.get(i+1).x,mPointsList.get(i+1).y,mPointsList.get(i+2).x,mPointsList.get(i+2).y);
+        }
+        wavePath.lineTo(mViewWidth/2+circleR,mViewHeight/2+circleR+mWaveHeight-mLevelLine);
+        wavePath.lineTo(mViewWidth/2+circleR,mViewHeight/2+circleR+mWaveHeight);
+        wavePath.lineTo(mViewWidth/2-2*circleR,mViewHeight/2+circleR+mWaveHeight);
+        wavePath.lineTo(mViewWidth/2-2*circleR,mViewHeight/2+circleR+mWaveHeight-mLevelLine);
+        wavePath.close();
+        c.drawPath(wavePath,p);
+        return bm;
     }
 
     private void updatePoints(){
@@ -296,7 +307,7 @@ public class WaveView extends View {
                 timer=new Timer();
             }
             timer.schedule(mTaskX,0,10);
-            timer.schedule(mTaskY,1000,1000);
+            //timer.schedule(mTaskY,1000,1000);
         }
     }
 
