@@ -97,6 +97,7 @@ public class WaveView extends View {
      * 水平移动各点
      */
     private void moveX(){
+
         mMoveLen+=speedX;
         if(mLevelLine<=0){
             mLevelLine=0;
@@ -188,7 +189,7 @@ public class WaveView extends View {
     @Override
     public void onWindowFocusChanged(boolean hasWindowFocus) {
         super.onWindowFocusChanged(hasWindowFocus);
-        start();
+        //start();
     }
 
 
@@ -197,7 +198,7 @@ public class WaveView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if(!isMeasureed){
+       // if(!isMeasureed){
             isMeasureed=true;
             mViewHeight=getMeasuredHeight();
             mViewWidth=getMeasuredWidth();
@@ -207,7 +208,8 @@ public class WaveView extends View {
             speedY=2*circleR/100;
             mLevelLine=5*speedY;
             updatePoints();
-        }
+
+        //}
 
     }
     /** 实现图层的合并*/
@@ -292,7 +294,9 @@ public class WaveView extends View {
 
 
     public void start() {
+
         if(mLevelLine<circleR*2){
+            Log.i("fzw","start");
             if(mTaskX!=null){
                 mTaskX.cancel();
                 mTaskX=null;
@@ -307,6 +311,7 @@ public class WaveView extends View {
                 timer=new Timer();
             }
             timer.schedule(mTaskX,0,10);
+
             //timer.schedule(mTaskY,1000,1000);
         }
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PowerView">
+        <attr name="circle_radius" format="dimension"/>
+        <attr name="arc1_storke_width" format="dimension"/>
+        <attr name="arc2_storke_width" format="dimension"/>
+        <attr name="arc3_storke_width" format="dimension"/>
+        <attr name="arc4_storke_width" format="dimension"/>
+    </declare-styleable>
+</resources>
